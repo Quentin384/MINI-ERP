@@ -3,29 +3,37 @@ package com.mini_erp.ui;
 import javax.swing.*;
 
 public class MainFrame extends JFrame {
+
+    private CustomerPanel customerPanel;
+    private ProductPanel productPanel;
+    private AddOrderPanel addOrderPanel;
+    private OrderHistoryPanel orderHistoryPanel;
+
     public MainFrame() {
         setTitle("Mini ERP");
-        setSize(900, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1000, 700);
         setLocationRelativeTo(null);
 
-        CustomerPanel customerPanel = new CustomerPanel();
-        ProductPanel productPanel = new ProductPanel();
-        OrderPanel orderPanel = new OrderPanel(customerPanel, productPanel);
+        // Initialisation des panels
+        customerPanel = new CustomerPanel();
+        productPanel = new ProductPanel();
+        addOrderPanel = new AddOrderPanel();
+        orderHistoryPanel = new OrderHistoryPanel(productPanel);
 
-        // Ici on passe seulement productPanel au lieu de customerPanel + productPanel
-        OrderHistoryPanel orderHistoryPanel = new OrderHistoryPanel(productPanel);
-
+        // Création du panneau à onglets
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Clients", customerPanel);
         tabbedPane.addTab("Produits", productPanel);
-        tabbedPane.addTab("Nouvelle commande", orderPanel);
-        tabbedPane.addTab("Historique commandes", orderHistoryPanel);
+        tabbedPane.addTab("Ajouter Commande", addOrderPanel);
+        tabbedPane.addTab("Historique Commandes", orderHistoryPanel);
 
-        add(tabbedPane);
+        getContentPane().add(tabbedPane);
+
+        setVisible(true);
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new MainFrame().setVisible(true));
+        SwingUtilities.invokeLater(() -> new MainFrame());
     }
 }

@@ -2,6 +2,7 @@ package com.mini_erp.ui;
 
 import com.mini_erp.dao.CustomerDAO;
 import com.mini_erp.dao.OrderDAO;
+import com.mini_erp.dao.ProductDAO;
 import com.mini_erp.model.Customer;
 import com.mini_erp.model.Order;
 import com.mini_erp.model.OrderLine;
@@ -31,8 +32,15 @@ public class OrderHistoryPanel extends JPanel {
         this.productPanel = productPanel;
         setLayout(new BorderLayout());
 
-        // Panel top avec combo client + bouton charger
-        JPanel topPanel = new JPanel();
+        initTopPanel();
+        initTables();
+        initActions();
+
+        loadCustomersWithOrders();
+    }
+
+    private void initTopPanel() {
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
         customerComboBox = new JComboBox<>();
         customerComboBox.setPreferredSize(new Dimension(300, 25));
@@ -43,22 +51,36 @@ public class OrderHistoryPanel extends JPanel {
         topPanel.add(loadOrdersButton);
 
         add(topPanel, BorderLayout.NORTH);
+    }
 
-        // Table commandes
-        orderTableModel = new DefaultTableModel(new Object[]{"ID", "Date", "Montant total"}, 0);
+    private void initTables() {
+        // Table des commandes
+        orderTableModel = new DefaultTableModel(new Object[]{"ID", "Date", "Montant total"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // désactive l'édition directe
+            }
+        };
         ordersTable = new JTable(orderTableModel);
+        ordersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Table lignes commandes
-        orderLinesModel = new DefaultTableModel(new Object[]{"Produit", "Quantité"}, 0);
+        // Table des lignes de commande
+        orderLinesModel = new DefaultTableModel(new Object[]{"Produit", "Quantité"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         orderLinesTable = new JTable(orderLinesModel);
 
-        // Split pane vertical
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
                 new JScrollPane(ordersTable), new JScrollPane(orderLinesTable));
         splitPane.setDividerLocation(150);
-        add(splitPane, BorderLayout.CENTER);
 
-        // Actions
+        add(splitPane, BorderLayout.CENTER);
+    }
+
+    private void initActions() {
         loadOrdersButton.addActionListener(e -> loadOrders());
 
         ordersTable.getSelectionModel().addListSelectionListener(e -> {
@@ -66,36 +88,27 @@ public class OrderHistoryPanel extends JPanel {
                 showOrderLines();
             }
         });
-
-        loadCustomersWithOrders();
     }
 
     private void loadCustomersWithOrders() {
         try {
-            // Charger tous les clients ayant au moins une commande
             List<Customer> customers = customerDAO.getCustomersWithOrders();
             DefaultComboBoxModel<Customer> model = new DefaultComboBoxModel<>();
-            for (Customer c : customers) {
-                model.addElement(c);
-            }
+            customers.forEach(model::addElement);
             customerComboBox.setModel(model);
 
             if (!customers.isEmpty()) {
                 customerComboBox.setSelectedIndex(0);
             }
         } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Erreur chargement clients : " + e.getMessage(),
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
+            showError("Erreur chargement clients : " + e.getMessage());
         }
     }
 
     private void loadOrders() {
         Customer selectedCustomer = (Customer) customerComboBox.getSelectedItem();
         if (selectedCustomer == null) {
-            JOptionPane.showMessageDialog(this,
-                    "Veuillez sélectionner un client.",
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
+            showError("Veuillez sélectionner un client.");
             return;
         }
 
@@ -103,6 +116,7 @@ public class OrderHistoryPanel extends JPanel {
             List<Order> orders = orderDAO.getOrdersByCustomer(selectedCustomer.getId());
             orderTableModel.setRowCount(0);
             orderLinesModel.setRowCount(0);
+
             for (Order o : orders) {
                 orderTableModel.addRow(new Object[]{
                         o.getId(),
@@ -110,42 +124,44 @@ public class OrderHistoryPanel extends JPanel {
                         o.getTotalAmount()
                 });
             }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Erreur chargement commandes : " + ex.getMessage(),
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException e) {
+            showError("Erreur chargement commandes : " + e.getMessage());
         }
     }
 
     private void showOrderLines() {
-        int row = ordersTable.getSelectedRow();
-        if (row < 0) {
+        int selectedRow = ordersTable.getSelectedRow();
+        if (selectedRow < 0) {
             orderLinesModel.setRowCount(0);
             return;
         }
 
-        int orderId = (int) orderTableModel.getValueAt(row, 0);
+        int orderId = (int) orderTableModel.getValueAt(selectedRow, 0);
 
         try {
             List<OrderLine> lines = orderDAO.getOrderLines(orderId);
             orderLinesModel.setRowCount(0);
 
-            List<Product> products = productPanel.dao.getProducts(null);
+            // On récupère les produits via ProductDAO (pas accès direct au dao privé)
+            ProductDAO productDAO = new ProductDAO();
+            List<Product> products = productDAO.getProducts(null);
 
             for (OrderLine line : lines) {
-                Product p = products.stream()
-                        .filter(prod -> prod.getProdId() == line.getProductId())
+                Product product = products.stream()
+                        .filter(p -> p.getProdId() == line.getProductId())
                         .findFirst()
                         .orElse(null);
 
-                String productName = p != null ? p.getTitle() : "Produit #" + line.getProductId();
+                String productName = product != null ? product.getTitle() : "Produit #" + line.getProductId();
 
                 orderLinesModel.addRow(new Object[]{productName, line.getQuantity()});
             }
         } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Erreur chargement détails commande : " + e.getMessage(),
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
+            showError("Erreur chargement détails commande : " + e.getMessage());
         }
+    }
+
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(this, message, "Erreur", JOptionPane.ERROR_MESSAGE);
     }
 }

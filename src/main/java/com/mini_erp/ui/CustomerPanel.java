@@ -12,16 +12,15 @@ import javax.swing.table.DefaultTableModel;
 public class CustomerPanel extends JPanel {
 
     private final JButton loadCustomersButton = new JButton("Charger clients");
+    private final JButton addCustomerButton = new JButton("Ajouter client");
     private final JTable customersTable = new JTable();
     private final DefaultTableModel tableModel;
 
-    // Liste des clients chargés
     private List<Customer> loadedCustomers = new ArrayList<>();
 
     public CustomerPanel() {
         setLayout(new BorderLayout());
 
-        // Définition des colonnes (assure-toi que ça correspond à ta classe Customer)
         tableModel = new DefaultTableModel(new Object[]{
             "ID", "Prénom", "Nom", "Adresse 1", "Adresse 2", "Ville", "État", "Code Postal", "Pays", "Région",
             "Email", "Téléphone", "Type CB", "CB", "Expiration CB", "Username", "Password", "Âge", "Revenu", "Genre"
@@ -32,11 +31,22 @@ public class CustomerPanel extends JPanel {
 
         JPanel topPanel = new JPanel();
         topPanel.add(loadCustomersButton);
+        topPanel.add(addCustomerButton);
 
         add(topPanel, BorderLayout.NORTH);
         add(new JScrollPane(customersTable), BorderLayout.CENTER);
 
         loadCustomersButton.addActionListener(e -> loadCustomers());
+
+        addCustomerButton.addActionListener(e -> {
+            AddCustomerForm addForm = new AddCustomerForm();
+            addForm.addWindowListener(new java.awt.event.WindowAdapter() {
+                @Override
+                public void windowClosed(java.awt.event.WindowEvent e) {
+                    loadCustomers();
+                }
+            });
+        });
     }
 
     private void loadCustomers() {
@@ -69,14 +79,12 @@ public class CustomerPanel extends JPanel {
                 });
             }
         } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Erreur lors du chargement des clients : " + e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Erreur lors du chargement des clients : " + e.getMessage(),
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    /**
-     * Renvoie le client actuellement sélectionné dans la table,
-     * ou null si aucune sélection.
-     */
     public Customer getSelectedCustomer() {
         int selectedRow = customersTable.getSelectedRow();
         if (selectedRow < 0 || selectedRow >= loadedCustomers.size()) {
