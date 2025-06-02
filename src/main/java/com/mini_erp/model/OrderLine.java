@@ -12,4 +12,8 @@ public class OrderLine {
     // Getters & setters
     public int getProductId() { return productId; }
     public int getQuantity() { return quantity; }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
 }

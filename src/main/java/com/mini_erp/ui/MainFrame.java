@@ -8,6 +8,7 @@ public class MainFrame extends JFrame {
     private ProductPanel productPanel;
     private AddOrderPanel addOrderPanel;
     private OrderHistoryPanel orderHistoryPanel;
+    private InventoryPanel inventoryPanel;
 
     public MainFrame() {
         setTitle("Mini ERP");
@@ -18,8 +19,9 @@ public class MainFrame extends JFrame {
         // Initialisation des panels
         customerPanel = new CustomerPanel();
         productPanel = new ProductPanel();
-        addOrderPanel = new AddOrderPanel();
-        orderHistoryPanel = new OrderHistoryPanel(productPanel);
+        orderHistoryPanel = new OrderHistoryPanel();          // sans paramètre
+        addOrderPanel = new AddOrderPanel(orderHistoryPanel); // prend orderHistoryPanel en paramètre
+        inventoryPanel = new InventoryPanel();                // nouveau panel d'inventaire
 
         // Création du panneau à onglets
         JTabbedPane tabbedPane = new JTabbedPane();
@@ -27,13 +29,13 @@ public class MainFrame extends JFrame {
         tabbedPane.addTab("Produits", productPanel);
         tabbedPane.addTab("Ajouter Commande", addOrderPanel);
         tabbedPane.addTab("Historique Commandes", orderHistoryPanel);
+        tabbedPane.addTab("Inventaire", inventoryPanel); // nouveau
 
         getContentPane().add(tabbedPane);
-
         setVisible(true);
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new MainFrame());
+        SwingUtilities.invokeLater(MainFrame::new);
     }
 }

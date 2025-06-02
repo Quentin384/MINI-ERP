@@ -23,40 +23,49 @@ public class OrderDAO {
                 double price = getProductPrice(conn, line.getProductId());
                 netAmount += price * line.getQuantity();
             }
+
             double tax = netAmount * TAX_RATE;
             double totalAmount = netAmount + tax;
 
-            String insertOrderSQL = "INSERT INTO orders (customerid, orderdate, netamount, tax, totalamount) VALUES (?, ?, ?, ?, ?) RETURNING orderid";
-            int orderId;
+            String insertOrderSQL = """
+                INSERT INTO orders (customerid, orderdate, netamount, tax, totalamount)
+                VALUES (?, ?, ?, ?, ?)
+                RETURNING orderid
+            """;
 
+            int orderId;
             try (PreparedStatement ps = conn.prepareStatement(insertOrderSQL)) {
                 ps.setInt(1, order.getCustomerId());
                 ps.setDate(2, Date.valueOf(LocalDate.now()));
                 ps.setDouble(3, netAmount);
                 ps.setDouble(4, tax);
                 ps.setDouble(5, totalAmount);
+
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         orderId = rs.getInt("orderid");
                     } else {
-                        throw new SQLException("Erreur lors de la création de la commande, aucun ID retourné.");
+                        throw new SQLException("Aucun ID de commande retourné.");
                     }
                 }
             }
 
-            String insertLineSQL = "INSERT INTO orderlines (orderid, prod_id, quantity) VALUES (?, ?, ?)";
+            String insertLineSQL = """
+                INSERT INTO orderlines (orderlineid, orderid, prod_id, quantity, orderdate)
+                VALUES (nextval('orderlines_orderlineid_seq'), ?, ?, ?, ?)
+            """;
 
             try (PreparedStatement ps = conn.prepareStatement(insertLineSQL)) {
                 for (OrderLine line : order.getLines()) {
                     ps.setInt(1, orderId);
                     ps.setInt(2, line.getProductId());
                     ps.setInt(3, line.getQuantity());
+                    ps.setDate(4, Date.valueOf(LocalDate.now()));
                     ps.addBatch();
                 }
                 ps.executeBatch();
             }
 
-            // Mise à jour du stock
             for (OrderLine line : order.getLines()) {
                 updateInventory(conn, line.getProductId(), line.getQuantity());
             }
@@ -81,14 +90,14 @@ public class OrderDAO {
                 if (rs.next()) {
                     return rs.getDouble("price");
                 } else {
-                    throw new SQLException("Produit non trouvé: " + productId);
+                    throw new SQLException("Produit non trouvé avec l'ID : " + productId);
                 }
             }
         }
     }
 
     private void updateInventory(Connection conn, int productId, int quantityOrdered) throws SQLException {
-        String updateSQL = "UPDATE inventory SET quan_in_stock = quan_in_stock - ? WHERE product_id = ?";
+        String updateSQL = "UPDATE inventory SET quan_in_stock = quan_in_stock - ? WHERE prod_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(updateSQL)) {
             ps.setInt(1, quantityOrdered);
             ps.setInt(2, productId);
@@ -98,12 +107,17 @@ public class OrderDAO {
 
     public List<Order> getOrdersByCustomer(int customerId) throws SQLException {
         List<Order> orders = new ArrayList<>();
-        String sql = "SELECT orderid, orderdate, netamount, tax, totalamount FROM orders WHERE customerid = ? ORDER BY orderdate DESC";
+        String sql = """
+            SELECT orderid, orderdate, netamount, tax, totalamount
+            FROM orders
+            WHERE customerid = ?
+            ORDER BY orderdate DESC
+        """;
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setInt(1, customerId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     orders.add(new Order(
@@ -113,22 +127,27 @@ public class OrderDAO {
                             rs.getDouble("netamount"),
                             rs.getDouble("tax"),
                             rs.getDouble("totalamount"),
-                            null // Les lignes peuvent être chargées séparément
+                            null
                     ));
                 }
             }
         }
+
         return orders;
     }
 
     public List<OrderLine> getOrderLines(int orderId) throws SQLException {
         List<OrderLine> lines = new ArrayList<>();
-        String sql = "SELECT orderlineid, orderid, prod_id, quantity, orderdate FROM orderlines WHERE orderid = ?";
+        String sql = """
+            SELECT prod_id, quantity
+            FROM orderlines
+            WHERE orderid = ?
+        """;
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setInt(1, orderId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     lines.add(new OrderLine(
@@ -138,6 +157,7 @@ public class OrderDAO {
                 }
             }
         }
+
         return lines;
     }
 }

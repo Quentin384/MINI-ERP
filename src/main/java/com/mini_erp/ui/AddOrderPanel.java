@@ -18,70 +18,69 @@ public class AddOrderPanel extends JPanel {
 
     private final CustomerDAO customerDAO = new CustomerDAO();
     private final OrderDAO orderDAO = new OrderDAO();
+    private final ProductDAO productDAO = new ProductDAO();
 
     private JComboBox<Customer> customerComboBox;
     private JComboBox<Product> productComboBox;
     private JSpinner quantitySpinner;
     private JButton addProductButton;
-    private JButton removeProductButton;
-    private JButton addOrderButton;
+    private JButton submitOrderButton;
 
     private DefaultTableModel orderLinesModel;
     private JTable orderLinesTable;
 
-    private final List<OrderLine> orderLines = new ArrayList<>();
+    // Liste des lignes de commande en cours
+    private final List<OrderLine> currentOrderLines = new ArrayList<>();
 
-    public AddOrderPanel() {
+    private final OrderHistoryPanel orderHistoryPanel;
+
+    public AddOrderPanel(OrderHistoryPanel orderHistoryPanel) {
+        this.orderHistoryPanel = orderHistoryPanel;
         setLayout(new BorderLayout());
 
-        // Panel sélection client
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        topPanel.add(new JLabel("Client :"));
+        // Panel client
+        JPanel clientPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        clientPanel.add(new JLabel("Client :"));
         customerComboBox = new JComboBox<>();
         customerComboBox.setPreferredSize(new Dimension(300, 25));
-        topPanel.add(customerComboBox);
-        add(topPanel, BorderLayout.NORTH);
+        clientPanel.add(customerComboBox);
+        add(clientPanel, BorderLayout.NORTH);
 
-        // Panel sélection produit + quantité + bouton ajout produit
-        JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        centerPanel.add(new JLabel("Produit :"));
+        // Panel sélection produit + quantité + bouton ajouter produit
+        JPanel productPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        productPanel.add(new JLabel("Produit :"));
         productComboBox = new JComboBox<>();
-        productComboBox.setPreferredSize(new Dimension(250, 25));
-        centerPanel.add(productComboBox);
+        productComboBox.setPreferredSize(new Dimension(300, 25));
+        productPanel.add(productComboBox);
 
-        centerPanel.add(new JLabel("Quantité :"));
+        productPanel.add(new JLabel("Quantité :"));
         quantitySpinner = new JSpinner(new SpinnerNumberModel(1, 1, 1000, 1));
-        centerPanel.add(quantitySpinner);
+        productPanel.add(quantitySpinner);
 
         addProductButton = new JButton("Ajouter produit");
-        centerPanel.add(addProductButton);
+        productPanel.add(addProductButton);
 
-        removeProductButton = new JButton("Supprimer produit");
-        centerPanel.add(removeProductButton);
+        add(productPanel, BorderLayout.CENTER);
 
-        add(centerPanel, BorderLayout.CENTER);
-
-        // Table pour afficher les produits sélectionnés
+        // Table pour afficher les produits ajoutés
         orderLinesModel = new DefaultTableModel(new Object[]{"Produit", "Quantité"}, 0);
         orderLinesTable = new JTable(orderLinesModel);
         JScrollPane scrollPane = new JScrollPane(orderLinesTable);
-        scrollPane.setPreferredSize(new Dimension(600, 200));
-        add(scrollPane, BorderLayout.SOUTH);
+        scrollPane.setPreferredSize(new Dimension(400, 150));
+        add(scrollPane, BorderLayout.EAST);
 
-        // Bouton final ajouter commande
-        addOrderButton = new JButton("Valider la commande");
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottomPanel.add(addOrderButton);
-        add(bottomPanel, BorderLayout.PAGE_END);
+        // Bouton valider la commande
+        submitOrderButton = new JButton("Valider la commande");
+        submitOrderButton.setEnabled(false);
+        add(submitOrderButton, BorderLayout.SOUTH);
 
-        // Chargement données
+        // Chargement des clients et produits
         loadCustomers();
         loadProducts();
 
-        // Action boutons
+        // Actions
         addProductButton.addActionListener(e -> addProductToOrder());
-        removeProductButton.addActionListener(e -> removeSelectedProduct());
-        addOrderButton.addActionListener(e -> addOrder());
+        submitOrderButton.addActionListener(e -> submitOrder());
     }
 
     private void loadCustomers() {
@@ -104,7 +103,6 @@ public class AddOrderPanel extends JPanel {
 
     private void loadProducts() {
         try {
-            ProductDAO productDAO = new ProductDAO();
             List<Product> products = productDAO.getProducts(null);
             DefaultComboBoxModel<Product> model = new DefaultComboBoxModel<>();
             for (Product p : products) {
@@ -126,77 +124,82 @@ public class AddOrderPanel extends JPanel {
         int quantity = (Integer) quantitySpinner.getValue();
 
         if (selectedProduct == null) {
-            JOptionPane.showMessageDialog(this,
-                    "Veuillez sélectionner un produit.",
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un produit.", "Erreur", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         if (quantity <= 0) {
-            JOptionPane.showMessageDialog(this,
-                    "La quantité doit être supérieure à 0.",
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "La quantité doit être supérieure à 0.", "Erreur", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Vérifier si produit déjà ajouté -> incrémenter quantité
+        // Vérifier si le produit est déjà dans la liste
         boolean found = false;
-        for (int i = 0; i < orderLines.size(); i++) {
-            OrderLine ol = orderLines.get(i);
-            if (ol.getProductId() == selectedProduct.getProdId()) {
-                ol.setQuantity(ol.getQuantity() + quantity);
-                orderLinesModel.setValueAt(ol.getQuantity(), i, 1);
+        for (OrderLine line : currentOrderLines) {
+            if (line.getProductId() == selectedProduct.getProdId()) {
+                // Mettre à jour la quantité
+                line.setQuantity(line.getQuantity() + quantity);
                 found = true;
                 break;
             }
         }
+
         if (!found) {
-            OrderLine newLine = new OrderLine(selectedProduct.getProdId(), quantity);
-            orderLines.add(newLine);
-            orderLinesModel.addRow(new Object[]{selectedProduct.getTitle(), quantity});
+            currentOrderLines.add(new OrderLine(selectedProduct.getProdId(), quantity));
+        }
+
+        refreshOrderLinesTable();
+
+        submitOrderButton.setEnabled(!currentOrderLines.isEmpty());
+    }
+
+    private void refreshOrderLinesTable() {
+        orderLinesModel.setRowCount(0);
+        for (OrderLine line : currentOrderLines) {
+            Product p = null;
+            for (int i = 0; i < productComboBox.getItemCount(); i++) {
+                Product prod = productComboBox.getItemAt(i);
+                if (prod.getProdId() == line.getProductId()) {
+                    p = prod;
+                    break;
+                }
+            }
+            String productName = (p != null) ? p.getTitle() : "Produit #" + line.getProductId();
+            orderLinesModel.addRow(new Object[]{productName, line.getQuantity()});
         }
     }
 
-    private void removeSelectedProduct() {
-        int selectedRow = orderLinesTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            orderLines.remove(selectedRow);
-            orderLinesModel.removeRow(selectedRow);
-        } else {
-            JOptionPane.showMessageDialog(this,
-                    "Veuillez sélectionner un produit à supprimer dans la liste.",
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void addOrder() {
+    private void submitOrder() {
         Customer selectedCustomer = (Customer) customerComboBox.getSelectedItem();
 
         if (selectedCustomer == null) {
-            JOptionPane.showMessageDialog(this,
-                    "Veuillez sélectionner un client.",
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        if (orderLines.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Veuillez ajouter au moins un produit à la commande.",
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un client.", "Erreur", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         try {
-            orderDAO.addOrder(selectedCustomer.getId(), orderLines);
+            // Crée un objet Order avec client et lignes de commande
+            com.mini_erp.model.Order order = new com.mini_erp.model.Order(
+                    0,
+                    selectedCustomer.getId(),
+                    null,
+                    0, 0, 0,
+                    new ArrayList<>(currentOrderLines)
+            );
+
+            orderDAO.createOrder(order);
 
             JOptionPane.showMessageDialog(this,
                     "Commande ajoutée avec succès.",
                     "Succès", JOptionPane.INFORMATION_MESSAGE);
 
-            // Reset formulaire
-            orderLines.clear();
-            orderLinesModel.setRowCount(0);
+            currentOrderLines.clear();
+            refreshOrderLinesTable();
+            submitOrderButton.setEnabled(false);
             quantitySpinner.setValue(1);
+
+            // Rafraîchir l'historique des commandes
+            orderHistoryPanel.refreshOrders();
 
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this,
