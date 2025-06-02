@@ -96,7 +96,7 @@ authentification des utilisateurs, reporting PDF, interface web ou déploiement 
 ![Capture écran 5](./Docu/Capture/Visualisation-des-commandes.png)  
 *Vue de la page de visualisation des commandes*
 
-![Capture écran 6](./Docu/Capture/Visualisations-stocks.png)  
+![Capture écran 6](./Docu/Capture/Visualisation-stocks.png)  
 *Vue de la page de visualisation des stocks*
 
 ---
