@@ -31,7 +31,7 @@ public class CustomerDAO {
                     rs.getShort("region"),
                     rs.getString("email"),
                     rs.getString("phone"),
-                    rs.getString("creditcardtype"),          // String ici
+                    rs.getString("creditcardtype"),
                     rs.getString("creditcard"),
                     rs.getString("creditcardexpiration"),
                     rs.getString("username"),
@@ -43,6 +43,46 @@ public class CustomerDAO {
             }
         }
 
+        return customers;
+    }
+
+    public List<Customer> getCustomersWithOrders() throws SQLException {
+        List<Customer> customers = new ArrayList<>();
+        String sql = """
+            SELECT DISTINCT c.*
+            FROM customers c
+            JOIN orders o ON c.customerid = o.customerid
+            """;
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                customers.add(new Customer(
+                    rs.getInt("customerid"),
+                    rs.getString("firstname"),
+                    rs.getString("lastname"),
+                    rs.getString("address1"),
+                    rs.getString("address2"),
+                    rs.getString("city"),
+                    rs.getString("state"),
+                    rs.getInt("zip"),
+                    rs.getString("country"),
+                    rs.getShort("region"),
+                    rs.getString("email"),
+                    rs.getString("phone"),
+                    rs.getString("creditcardtype"),
+                    rs.getString("creditcard"),
+                    rs.getString("creditcardexpiration"),
+                    rs.getString("username"),
+                    rs.getString("password"),
+                    rs.getShort("age"),
+                    rs.getInt("income"),
+                    rs.getString("gender")
+                ));
+            }
+        }
         return customers;
     }
 
@@ -63,7 +103,7 @@ public class CustomerDAO {
             stmt.setShort(9, customer.getRegion());
             stmt.setString(10, customer.getEmail());
             stmt.setString(11, customer.getPhone());
-            stmt.setString(12, customer.getCreditcardtype());   // String ici
+            stmt.setString(12, customer.getCreditcardtype());
             stmt.setString(13, customer.getCreditcard());
             stmt.setString(14, customer.getCreditcardexpiration());
             stmt.setString(15, customer.getUsername());

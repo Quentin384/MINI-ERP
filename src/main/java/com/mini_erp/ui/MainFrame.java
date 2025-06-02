@@ -12,7 +12,9 @@ public class MainFrame extends JFrame {
         CustomerPanel customerPanel = new CustomerPanel();
         ProductPanel productPanel = new ProductPanel();
         OrderPanel orderPanel = new OrderPanel(customerPanel, productPanel);
-        OrderHistoryPanel orderHistoryPanel = new OrderHistoryPanel(customerPanel, productPanel);
+
+        // Ici on passe seulement productPanel au lieu de customerPanel + productPanel
+        OrderHistoryPanel orderHistoryPanel = new OrderHistoryPanel(productPanel);
 
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Clients", customerPanel);
