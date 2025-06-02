@@ -2,7 +2,6 @@ package com.mini_erp.dao;
 
 import com.mini_erp.db.DatabaseManager;
 import com.mini_erp.model.Customer;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +30,7 @@ public class CustomerDAO {
                     rs.getShort("region"),
                     rs.getString("email"),
                     rs.getString("phone"),
-                    rs.getString("creditcardtype"),
+                    rs.getInt("creditcardtype"),
                     rs.getString("creditcard"),
                     rs.getString("creditcardexpiration"),
                     rs.getString("username"),
@@ -72,7 +71,7 @@ public class CustomerDAO {
                     rs.getShort("region"),
                     rs.getString("email"),
                     rs.getString("phone"),
-                    rs.getString("creditcardtype"),
+                    rs.getInt("creditcardtype"),
                     rs.getString("creditcard"),
                     rs.getString("creditcardexpiration"),
                     rs.getString("username"),
@@ -103,7 +102,7 @@ public class CustomerDAO {
             stmt.setShort(9, customer.getRegion());
             stmt.setString(10, customer.getEmail());
             stmt.setString(11, customer.getPhone());
-            stmt.setString(12, customer.getCreditcardtype());
+            stmt.setInt(12, customer.getCreditcardtype());
             stmt.setString(13, customer.getCreditcard());
             stmt.setString(14, customer.getCreditcardexpiration());
             stmt.setString(15, customer.getUsername());

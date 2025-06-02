@@ -14,7 +14,7 @@ public class Customer {
     private final short region;
     private final String email;
     private final String phone;
-    private final String creditcardtype;
+    private final int creditcardtype;  // changé en int
     private final String creditcard;
     private final String creditcardexpiration;
     private final String username;
@@ -25,7 +25,7 @@ public class Customer {
 
     public Customer(int id, String firstname, String lastname, String address1, String address2, String city,
                     String state, int zip, String country, short region, String email, String phone,
-                    String creditcardtype, String creditcard, String creditcardexpiration, String username,
+                    int creditcardtype, String creditcard, String creditcardexpiration, String username,
                     String password, short age, int income, String gender) {
         this.id = id;
         this.firstname = firstname;
@@ -99,7 +99,7 @@ public class Customer {
         return phone;
     }
 
-    public String getCreditcardtype() {
+    public int getCreditcardtype() {
         return creditcardtype;
     }
 
