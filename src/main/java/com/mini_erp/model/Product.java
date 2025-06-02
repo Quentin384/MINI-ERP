@@ -1,13 +1,13 @@
 package com.mini_erp.model;
 
 public class Product {
-    private int prodId;
-    private int category;          // integer
-    private String title;          // character varying
-    private String actor;          // character varying
-    private double price;          // numeric
-    private short special;         // smallint
-    private int commonProdId;      // integer
+    private final int prodId;
+    private final int category;
+    private final String title;
+    private final String actor;
+    private final double price;
+    private final short special;
+    private final int commonProdId;
 
     public Product(int prodId, int category, String title, String actor, double price, short special, int commonProdId) {
         this.prodId = prodId;
@@ -20,11 +20,36 @@ public class Product {
     }
 
     // Getters
-    public int getProdId() { return prodId; }
-    public int getCategory() { return category; }
-    public String getTitle() { return title; }
-    public String getActor() { return actor; }
-    public double getPrice() { return price; }
-    public short getSpecial() { return special; }
-    public int getCommonProdId() { return commonProdId; }
+    public int getProdId() {
+        return prodId;
+    }
+
+    public int getCategory() {
+        return category;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getActor() {
+        return actor;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public short getSpecial() {
+        return special;
+    }
+
+    public int getCommonProdId() {
+        return commonProdId;
+    }
+
+    @Override
+    public String toString() {
+        return title;
+    }
 }
