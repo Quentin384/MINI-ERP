@@ -12,12 +12,17 @@ public class ProductPanel extends JPanel {
     private JComboBox<Integer> categoryFilter = new JComboBox<>();
     private JTable productTable = new JTable();
     private DefaultTableModel tableModel;
-    private ProductDAO dao = new ProductDAO();
+    public ProductDAO dao = new ProductDAO();
 
     public ProductPanel() {
         setLayout(new BorderLayout());
 
-        tableModel = new DefaultTableModel(new Object[]{"ID", "Catégorie", "Titre", "Acteur", "Prix", "Spécial", "ID Commun"}, 0);
+        tableModel = new DefaultTableModel(new Object[]{"ID", "Catégorie", "Titre", "Acteur", "Prix", "Spécial", "ID Commun"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Table non éditable
+            }
+        };
         productTable.setModel(tableModel);
 
         JPanel topPanel = new JPanel();
@@ -37,7 +42,7 @@ public class ProductPanel extends JPanel {
         try {
             List<Integer> categories = dao.getCategories();
             categoryFilter.removeAllItems();
-            categoryFilter.addItem(null); // Pour "Tous"
+            categoryFilter.addItem(null); // "Tous" - catégorie null
             for (Integer cat : categories) {
                 if (cat != null) {
                     categoryFilter.addItem(cat);

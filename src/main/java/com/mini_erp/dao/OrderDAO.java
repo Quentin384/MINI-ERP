@@ -44,7 +44,7 @@ public class OrderDAO {
                 }
             }
 
-            String insertLineSQL = "INSERT INTO orderlines (order_id, product_id, quantity) VALUES (?, ?, ?)";
+            String insertLineSQL = "INSERT INTO orderlines (orderid, prod_id, quantity) VALUES (?, ?, ?)";
 
             try (PreparedStatement ps = conn.prepareStatement(insertLineSQL)) {
                 for (OrderLine line : order.getLines()) {
@@ -123,7 +123,7 @@ public class OrderDAO {
 
     public List<OrderLine> getOrderLines(int orderId) throws SQLException {
         List<OrderLine> lines = new ArrayList<>();
-        String sql = "SELECT product_id, quantity FROM orderlines WHERE order_id = ?";
+        String sql = "SELECT orderlineid, orderid, prod_id, quantity, orderdate FROM orderlines WHERE orderid = ?";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -132,7 +132,7 @@ public class OrderDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     lines.add(new OrderLine(
-                            rs.getInt("product_id"),
+                            rs.getInt("prod_id"),
                             rs.getInt("quantity")
                     ));
                 }

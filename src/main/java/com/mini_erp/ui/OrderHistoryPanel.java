@@ -6,12 +6,11 @@ import com.mini_erp.model.Customer;
 import com.mini_erp.model.Order;
 import com.mini_erp.model.OrderLine;
 import com.mini_erp.model.Product;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.SQLException;
 import java.util.List;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 
 public class OrderHistoryPanel extends JPanel {
 
@@ -135,11 +134,11 @@ public class OrderHistoryPanel extends JPanel {
 
             for (OrderLine line : lines) {
                 Product p = products.stream()
-                        .filter(prod -> prod.getId() == line.getProductId())
+                        .filter(prod -> prod.getProdId() == line.getProductId())
                         .findFirst()
                         .orElse(null);
 
-                String productName = p != null ? p.getName() : "Produit #" + line.getProductId();
+                String productName = p != null ? p.getTitle() : "Produit #" + line.getProductId();
 
                 orderLinesModel.addRow(new Object[]{productName, line.getQuantity()});
             }

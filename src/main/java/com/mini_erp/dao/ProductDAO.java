@@ -8,49 +8,49 @@ import java.util.List;
 
 public class ProductDAO {
 
-    public List<Product> getProducts(Integer categoryFilter) throws SQLException {
-        List<Product> products = new ArrayList<>();
-        String sql = "SELECT prod_id, category, title, actor, price, special, common_prod_id FROM products";
-        if (categoryFilter != null) {
+    public List<Product> getProducts(Integer category) throws SQLException {
+        String sql = "SELECT * FROM products";
+        if (category != null) {
             sql += " WHERE category = ?";
         }
 
         try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            if (categoryFilter != null) {
-                stmt.setInt(1, categoryFilter);
+            if (category != null) {
+                ps.setInt(1, category);
             }
 
-            try (ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Product> products = new ArrayList<>();
                 while (rs.next()) {
                     products.add(new Product(
-                            rs.getInt("prod_id"),
-                            rs.getInt("category"),
-                            rs.getString("title"),
-                            rs.getString("actor"),
-                            rs.getDouble("price"),
-                            rs.getShort("special"),
-                            rs.getInt("common_prod_id")
+                        rs.getInt("prod_id"),
+                        rs.getInt("category"),
+                        rs.getString("title"),
+                        rs.getString("actor"),
+                        rs.getDouble("price"),
+                        rs.getShort("special"),
+                        rs.getInt("common_prod_id")
                     ));
                 }
+                return products;
             }
         }
-        return products;
     }
 
     public List<Integer> getCategories() throws SQLException {
-        List<Integer> categories = new ArrayList<>();
         String sql = "SELECT DISTINCT category FROM products ORDER BY category";
 
         try (Connection conn = DatabaseManager.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            categories.add(null); // Représente "Tous"
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            List<Integer> categories = new ArrayList<>();
             while (rs.next()) {
                 categories.add(rs.getInt("category"));
             }
+            return categories;
         }
-        return categories;
     }
 }
