@@ -3,7 +3,6 @@ package com.mini_erp.dao;
 import com.mini_erp.db.DatabaseManager;
 import com.mini_erp.model.Order;
 import com.mini_erp.model.OrderLine;
-
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -27,7 +26,7 @@ public class OrderDAO {
             double tax = netAmount * TAX_RATE;
             double totalAmount = netAmount + tax;
 
-            String insertOrderSQL = "INSERT INTO orders (customer_id, order_date, netamount, tax, totalamount) VALUES (?, ?, ?, ?, ?) RETURNING id";
+            String insertOrderSQL = "INSERT INTO orders (customerid, orderdate, netamount, tax, totalamount) VALUES (?, ?, ?, ?, ?) RETURNING orderid";
             int orderId;
 
             try (PreparedStatement ps = conn.prepareStatement(insertOrderSQL)) {
@@ -36,9 +35,13 @@ public class OrderDAO {
                 ps.setDouble(3, netAmount);
                 ps.setDouble(4, tax);
                 ps.setDouble(5, totalAmount);
-                ResultSet rs = ps.executeQuery();
-                rs.next();
-                orderId = rs.getInt(1);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        orderId = rs.getInt("orderid");
+                    } else {
+                        throw new SQLException("Erreur lors de la création de la commande, aucun ID retourné.");
+                    }
+                }
             }
 
             String insertLineSQL = "INSERT INTO orderlines (order_id, product_id, quantity) VALUES (?, ?, ?)";
@@ -63,12 +66,15 @@ public class OrderDAO {
             if (conn != null) conn.rollback();
             throw ex;
         } finally {
-            if (conn != null) conn.setAutoCommit(true);
+            if (conn != null) {
+                conn.setAutoCommit(true);
+                conn.close();
+            }
         }
     }
 
     private double getProductPrice(Connection conn, int productId) throws SQLException {
-        String sql = "SELECT price FROM products WHERE id = ?";
+        String sql = "SELECT price FROM products WHERE prod_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, productId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -92,7 +98,7 @@ public class OrderDAO {
 
     public List<Order> getOrdersByCustomer(int customerId) throws SQLException {
         List<Order> orders = new ArrayList<>();
-        String sql = "SELECT id, order_date, netamount, tax, totalamount FROM orders WHERE customer_id = ? ORDER BY order_date DESC";
+        String sql = "SELECT orderid, orderdate, netamount, tax, totalamount FROM orders WHERE customerid = ? ORDER BY orderdate DESC";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -101,13 +107,13 @@ public class OrderDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     orders.add(new Order(
-                            rs.getInt("id"),
+                            rs.getInt("orderid"),
                             customerId,
-                            rs.getDate("order_date").toLocalDate(),
+                            rs.getDate("orderdate").toLocalDate(),
                             rs.getDouble("netamount"),
                             rs.getDouble("tax"),
                             rs.getDouble("totalamount"),
-                            null
+                            null // Les lignes peuvent être chargées séparément
                     ));
                 }
             }

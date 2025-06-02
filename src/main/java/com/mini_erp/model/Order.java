@@ -22,19 +22,50 @@ public class Order {
         this.lines = lines;
     }
 
+    // Constructeur utilisé lors de la création d’une nouvelle commande
     public Order(int customerId, List<OrderLine> lines) {
         this(-1, customerId, LocalDate.now(), 0, 0, 0, lines);
     }
 
     // Getters & setters
-    public int getId() { return id; }
-    public int getCustomerId() { return customerId; }
-    public LocalDate getOrderDate() { return orderDate; }
-    public double getNetAmount() { return netAmount; }
-    public void setNetAmount(double netAmount) { this.netAmount = netAmount; }
-    public double getTax() { return tax; }
-    public void setTax(double tax) { this.tax = tax; }
-    public double getTotalAmount() { return totalAmount; }
-    public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
-    public List<OrderLine> getLines() { return lines; }
+
+    public int getId() {
+        return id;
+    }
+
+    public int getCustomerId() {
+        return customerId;
+    }
+
+    public LocalDate getOrderDate() {
+        return orderDate;
+    }
+
+    public double getNetAmount() {
+        return netAmount;
+    }
+
+    public void setNetAmount(double netAmount) {
+        this.netAmount = netAmount;
+    }
+
+    public double getTax() {
+        return tax;
+    }
+
+    public void setTax(double tax) {
+        this.tax = tax;
+    }
+
+    public double getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(double totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public List<OrderLine> getLines() {
+        return lines;
+    }
 }

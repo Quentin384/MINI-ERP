@@ -13,16 +13,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OrderPanel extends JPanel {
-    private CustomerPanel customerPanel;
-    private ProductPanel productPanel;
+    private final CustomerPanel customerPanel;
+    private final ProductPanel productPanel;
 
-    private DefaultTableModel orderLinesModel;
-    private JTable orderLinesTable = new JTable();
+    private final DefaultTableModel orderLinesModel;
+    private final JTable orderLinesTable = new JTable();
 
-    private JButton addProductButton = new JButton("Ajouter produit");
-    private JButton submitOrderButton = new JButton("Valider commande");
+    private final JButton addProductButton = new JButton("Ajouter produit");
+    private final JButton submitOrderButton = new JButton("Valider commande");
 
-    private List<OrderLine> orderLines = new ArrayList<>();
+    private final List<OrderLine> orderLines = new ArrayList<>();
 
     public OrderPanel(CustomerPanel customerPanel, ProductPanel productPanel) {
         this.customerPanel = customerPanel;
@@ -52,6 +52,7 @@ public class OrderPanel extends JPanel {
         }
         String qtyStr = JOptionPane.showInputDialog(this, "Quantité :");
         if (qtyStr == null) return;
+
         int qty;
         try {
             qty = Integer.parseInt(qtyStr);
@@ -61,12 +62,12 @@ public class OrderPanel extends JPanel {
             return;
         }
 
-        // Ajouter ou augmenter la quantité dans la liste
+        // Mise à jour de la quantité en évitant modification pendant l'itération
         boolean found = false;
-        for (OrderLine ol : orderLines) {
+        for (int i = 0; i < orderLines.size(); i++) {
+            OrderLine ol = orderLines.get(i);
             if (ol.getProductId() == selectedProduct.getId()) {
-                orderLines.remove(ol);
-                orderLines.add(new OrderLine(ol.getProductId(), ol.getQuantity() + qty));
+                orderLines.set(i, new OrderLine(ol.getProductId(), ol.getQuantity() + qty));
                 found = true;
                 break;
             }
@@ -82,9 +83,13 @@ public class OrderPanel extends JPanel {
         for (OrderLine ol : orderLines) {
             Product p = null;
             try {
-                p = productPanel.dao.getProducts(null).stream().filter(prod -> prod.getId() == ol.getProductId()).findFirst().orElse(null);
+                p = productPanel.dao.getProducts(null).stream()
+                        .filter(prod -> prod.getId() == ol.getProductId())
+                        .findFirst()
+                        .orElse(null);
             } catch (SQLException e) {
-                // Ignore pour affichage, on affiche juste id
+                // Impossible de récupérer le produit, affichage par défaut
+                // Il serait intéressant de logger l'erreur ici
             }
             orderLinesModel.addRow(new Object[]{p != null ? p.getName() : "Produit #" + ol.getProductId(), ol.getQuantity()});
         }
@@ -106,7 +111,7 @@ public class OrderPanel extends JPanel {
 
         try {
             orderDAO.createOrder(order);
-            JOptionPane.showMessageDialog(this, "Commande enregistrée.");
+            JOptionPane.showMessageDialog(this, "Commande enregistrée avec succès.");
             orderLines.clear();
             refreshOrderLines();
         } catch (SQLException e) {
